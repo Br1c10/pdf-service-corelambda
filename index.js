@@ -13,25 +13,31 @@ const app = express();
 app.use(express.json());
 
 const getPuppeteerOptions = async () => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.VERCEL) { // Detectamos si estamos en Vercel
+        return {
+            args: [
+                ...chromium.args,
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+                "--disable-setuid-sandbox",
+                "--no-sandbox",
+                "--no-zygote"
+            ],
+            executablePath: await chromium.executablePath || "/usr/bin/chromium-browser",
+            headless: true
+        };
+    } else {
         return {
             headless: 'new',
             args: ['--no-sandbox'],
-            // Aquí necesitamos especificar la ruta a Chrome en tu sistema
             executablePath: 
                 process.platform === 'win32'
-                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'  // Windows
+                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
                     : process.platform === 'linux'
-                    ? '/usr/bin/google-chrome'                                      // Linux
-                    : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' // MacOS
+                    ? '/usr/bin/google-chrome'
+                    : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
         };
     }
-    return {
-        args: chromium.args,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        defaultViewport: chromium.defaultViewport,
-    };
 };
 
 app.post('/api/generate-pdf', async (req, res) => {
